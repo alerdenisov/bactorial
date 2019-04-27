@@ -7,9 +7,11 @@ uniform float time;
 attribute vec3 position;
 attribute vec2 uv;
 attribute vec2 translate;
+attribute float seed;
 
 varying vec2 vUv;
 varying float vScale;
+varying float vIndex;
 
 void main() {
 
@@ -21,5 +23,7 @@ void main() {
 //   scale = scale * 10.0 + 10.0;
   mvPosition.xyz += position * 40.;// * 1.0;
   vUv = uv;
+
+  vIndex = seed;
   gl_Position = projectionMatrix * mvPosition;
 }

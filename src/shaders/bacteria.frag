@@ -4,89 +4,124 @@ uniform sampler2D map;
 uniform float time;
 
 varying vec2 vUv;
-varying float vScale;
+varying float vIndex;
 
-float N21(vec2 p) { return fract(sin(p.x * 100. + p.y * 6574.) * 5647.); }
+#define S(a, b, c) smoothstep(a, b, c)
+#define saturate(a) clamp(a, 0.0, 1.0)
+#define SLIDE 7.5
+#define SLIDE2 .45
+#define SPREAD .13
+#define SIZE 16.
+#define STEPS 3
+#define NOISE_SIZE 8.
+#define SHINESS 2.2
 
-float SmoothNoise(vec2 uv) {
-  vec2 lv = fract(uv);
-  vec2 id = floor(uv);
+// float N21(vec2 p) { return fract(sin(p.x * 100. + p.y * 6574.) * 5647.); }
 
-  lv = lv * lv * (3. - 2. * lv);
-
-  float bl = N21(id);
-  float br = N21(id + vec2(1, 0));
-  float b = mix(bl, br, lv.x);
-
-  float tl = N21(id + vec2(0, 1));
-  float tr = N21(id + vec2(1, 1));
-  float t = mix(tl, tr, lv.x);
-
-  return mix(b, t, lv.y);
+vec2 hash(vec2 x) // replace this by something better
+{
+  // return x;
+  const vec2 k = vec2(0.3183099, 0.3678794);
+  x = x * k + k.yx;
+  return -1.0 + 2.0 * fract(16.0 * k * fract(x.x * x.y * (x.x + x.y)));
 }
 
-float SmoothNoise2(vec2 uv) {
-  float c = SmoothNoise(uv * 4.);
+float noise(vec2 p) {
+  vec2 i = floor(p);
+  vec2 f = fract(p);
 
-  // don't make octaves exactly twice as small
-  // this way the pattern will look more random and repeat less
-  c += SmoothNoise(uv * 8.2) * .5;
-  c += SmoothNoise(uv * 16.7) * .25;
-  c += SmoothNoise(uv * 32.4) * .125;
-  c += SmoothNoise(uv * 64.5) * .0625;
+  vec2 u = f * f * (3.0 - 2.0 * f);
 
-  c /= 2.;
-
-  return c;
+  return mix(mix(dot(hash(i + vec2(0.0, 0.0)), f - vec2(0.0, 0.0)),
+                 dot(hash(i + vec2(1.0, 0.0)), f - vec2(1.0, 0.0)), u.x),
+             mix(dot(hash(i + vec2(0.0, 1.0)), f - vec2(0.0, 1.0)),
+                 dot(hash(i + vec2(1.0, 1.0)), f - vec2(1.0, 1.0)), u.x),
+             u.y);
 }
 
-// HSL to RGB Convertion helpers
-vec3 HUEtoRGB(float H) {
-  H = mod(H, 1.0);
-  float R = abs(H * 6.0 - 3.0) - 1.0;
-  float G = 2.0 - abs(H * 6.0 - 2.0);
-  float B = 2.0 - abs(H * 6.0 - 4.0);
-  return clamp(vec3(R, G, B), 0.0, 1.0);
+float smoothDistance(float d1, float d2, float k) {
+  float h = clamp(0.5 + 0.5 * (d2 - d1) / k, 0.0, 1.0);
+  return mix(d2, d1, h) - k * h * (1.0 - h);
 }
 
-vec3 HSLtoRGB(vec3 HSL) {
-  vec3 RGB = HUEtoRGB(HSL.x);
-  float C = (1.0 - abs(2.0 * HSL.z - 1.0)) * HSL.y;
-  return (RGB - 0.5) * C + HSL.z;
+// float sdRoundCone(vec3 p, float r1, float r2, float h)
+// {
+//     vec2 q = vec2( length(p.xz), p.y );
+
+//     float b = (r1-r2)/h;
+//     float a = sqrt(1.0-b*b);
+//     float k = dot(q,vec2(-b,a));
+
+//     if( k < 0.0 ) return length(q) - r1;
+//     if( k > a*h ) return length(q-vec2(0.0,h)) - r2;
+
+//     return dot(q, vec2(a,b) ) - r1;
+// }
+
+float sphere(vec2 p, float r) {
+  return length(p) - r;
 }
-
-float line(float thickness, float center, float number) {
-  float a = smoothstep(center - thickness, center, number);
-  float b = smoothstep(center + thickness, center, number);
-
-  return min(a,b);
-}
-
-#define S(a,b,c) smoothstep(a, b, c)
-#define SLIDE .3
-#define SPREAD .54
-#define SIZE 3.
-#define STEPS 4
-#define SHINESS 3.2
 
 void main() {
-  // float r = smoothstep(0.65, 0.85, SmoothNoise2((vUv + vec2(0, time * 2.0)) / 2.0));
-  float r = min(SmoothNoise2(vUv * SIZE + time * SLIDE), SmoothNoise2(vUv * SIZE + time * SLIDE * 2.31));
-  float d = length(vUv * 2.0 - 1.0) * 1.15 + r * SPREAD;
-  float bg = floor((1. - pow(d, SHINESS)) * float(STEPS + 1)) / float(STEPS);//pow(d, 2.5);
-  gl_FragColor = vec4(bg, bg, bg, 1.0);
-  return;
-  float bright = bg;//floor((1.0 - bg) * 4.0) / 3.0;
-  float border = line(0.05, 0.67, d);
+  // // gl_FragColor = vec4(vIndex, vIndex, vIndex, 1.0);
+  // // return;
+  // float r1 = noise(fract(vUv + time * SLIDE));
+  // // float r = min(SmoothNoise2(vUv * SIZE + time * SLIDE), SmoothNoise2(vUv
+  // *
+  // // SIZE + time * SLIDE * 2.31));
+  // float r1 = S(0.7, 0.8, noise(vUv.xy * 2.));
+  // // float r1 = SmoothNoise2(vUv.xy * 5.0 + time * SLIDE2);//,
+  // // SmoothNoise2(vUv.xy * 15. + time * SLIDE)));
+  // // float r1 = SmoothNoise2(vUv.xy * 3. + time * SLIDE);
+  // gl_FragColor = vec4(
+  //   r1,
+  //   0.,
+  //   0.,
+  //   1.
+  // );
+  // return;
 
-  float body = S(0.7, 0.65, d);
+  float r = noise(vUv * SIZE + vIndex * SIZE + time * SLIDE);
+  float d = saturate(length(vUv * 2.0 - 1.0) * 1.85 + r * SPREAD);
+  float bg = 1. - pow(d, SHINESS);
+  bg = length(vUv * 2.0 - 1.0);
+  // bg = min(bg, length(vUv * 2.0 - 1.0 + vec2(1.0, 1.0) * fract(time)));
+  // bg = sin(length(vUv * 2.0 - 1.0 + (vec2(1.0, 1.0) * (fract(time) * 2.0 -
+  // 1.0))));
+
+  vec2 p = vUv * 2.0 - 1.0;
+  vec2 v = normalize(vec2(1.0, 1.0)) * fract(time);
+  float vp = length(v);
+  // bg = bg;// * abs(dot(p, v));
+
+  float s1 = sphere(p, 0.45);
+  float s2 = sphere(p + v * .75, (1. - vp) * 0.45);
+
+  bg = smoothDistance(s1, s2, .65);
+  bg += r * SPREAD;
+  bg = S(0.15, -0.25, bg);
   
-  gl_FragColor = vec4(body * bright, body * bright, body * bright, 1.0);
-  // vec4 diffuseColor = texture2D(map, vUv);
-  // gl_FragColor = vec4(diffuseColor.xyz * HSLtoRGB(vec3(vScale / 5.0, 1.0,
-  // 0.5)),
-  //                     diffuseColor.w);
+  float mask = S(0.15, 0.25, bg);
+  // bg = s2;
 
-  // if (diffuseColor.w < 0.5)
-  //   discard;
+  bg *= float(STEPS + 1);
+  bg = floor(bg);
+  bg /= float(STEPS); // pow(d, 2.5);
+
+  // gl_FragColor = vec4(bg * mask, bg * mask, bg * mask, 1.0);
+
+
+  vec3 dark = vec3(1., .388, .490);
+  vec3 light = vec3(.988, .917, .929);
+  vec3 col = mix(dark, light, bg);
+  gl_FragColor = vec4(col * mask, 1.0);
+  // vec3 col2 = mix(vec3(0.0), dark, r1);
+  // // gl_FragColor = vec4(fract(bg), 0.0, 0.0, 1.0);
+  // // gl_FragColor = vec4(mask, mask, mask, 1.0);
+  // gl_FragColor = vec4(max(col * mask, col2), 1.0);
+  // return;
+  // float bright = bg; // floor((1.0 - bg) * 4.0) / 3.0;
+  // float border = line(0.05, 0.67, d);
+
+  // float body = S(0.7, 0.65, d);
 }

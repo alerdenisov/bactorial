@@ -13,24 +13,29 @@ console.log(bacteria_frag, bacteria_vert)
   private material: THREE.RawShaderMaterial;
   private mesh: THREE.Mesh;
 
-  constructor(private COUNT = 100, private DISTANCE = 100) {
+  constructor(private COUNT = 100, private DISTANCE = 50) {
     if (this.init()) {
       this.animate();
     }
   }
 
   init() {
+    const seed = new Float32Array(this.COUNT);
     const positions = new Float32Array(this.COUNT * 2);
     const side = Math.sqrt(this.COUNT);
     for (let x = 0; x < side; x++) {
       for (let y = 0; y < side; y++) {
         const index = y * side + x
-        positions[index * 2 + 0] = x * this.DISTANCE
-        positions[index * 2 + 1] = y * this.DISTANCE
+        positions[index * 2 + 0] = x * this.DISTANCE * 2
+        positions[index * 2 + 1] = y * this.DISTANCE * 2
+
+        seed[index] = Math.random();
       }
     }
 
     this.renderer = new THREE.WebGLRenderer();
+
+    this.renderer.setClearColor(0x1b1c24, 1.0);
 
     if (this.renderer.extensions.get('ANGLE_instanced_arrays') === null) {
       document.getElementById('notSupported').style.display = '';
@@ -40,7 +45,7 @@ console.log(bacteria_frag, bacteria_vert)
     this.container = document.createElement('div');
     document.body.appendChild(this.container);
     this.camera = new THREE.PerspectiveCamera(
-        50, window.innerWidth / window.innerHeight, 1, 5000);
+        20, window.innerWidth / window.innerHeight, 1, 5000);
 
     this.camera.position.z = 1400;
 
@@ -54,6 +59,8 @@ console.log(bacteria_frag, bacteria_vert)
 
     this.geometry.addAttribute(
         'translate', new THREE.InstancedBufferAttribute(positions, 2));
+    this.geometry.addAttribute(
+        'seed', new THREE.InstancedBufferAttribute(seed, 1));
 
     this.material = new THREE.RawShaderMaterial({
       uniforms: {
@@ -67,6 +74,8 @@ console.log(bacteria_frag, bacteria_vert)
       depthTest: true,
       depthWrite: true
     });
+
+    this.material.blending = THREE.AdditiveBlending;
 
     this.mesh = new THREE.Mesh(this.geometry, this.material);
     this.mesh.scale.set(1, 1, 1);
