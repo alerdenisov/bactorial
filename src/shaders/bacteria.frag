@@ -55,10 +55,33 @@ vec3 HSLtoRGB(vec3 HSL) {
   return (RGB - 0.5) * C + HSL.z;
 }
 
+float line(float thickness, float center, float number) {
+  float a = smoothstep(center - thickness, center, number);
+  float b = smoothstep(center + thickness, center, number);
+
+  return min(a,b);
+}
+
+#define S(a,b,c) smoothstep(a, b, c)
+#define SLIDE .3
+#define SPREAD .54
+#define SIZE 3.
+#define STEPS 4
+#define SHINESS 3.2
+
 void main() {
-  float r = smoothstep(0.65, 0.85, SmoothNoise2((vUv + vec2(0, time * 2.0)) / 2.0));
-  // float r = SmoothNoise2(vUv / 2.0);
-  gl_FragColor = vec4(r, r, r, 1.0);
+  // float r = smoothstep(0.65, 0.85, SmoothNoise2((vUv + vec2(0, time * 2.0)) / 2.0));
+  float r = min(SmoothNoise2(vUv * SIZE + time * SLIDE), SmoothNoise2(vUv * SIZE + time * SLIDE * 2.31));
+  float d = length(vUv * 2.0 - 1.0) * 1.15 + r * SPREAD;
+  float bg = floor((1. - pow(d, SHINESS)) * float(STEPS + 1)) / float(STEPS);//pow(d, 2.5);
+  gl_FragColor = vec4(bg, bg, bg, 1.0);
+  return;
+  float bright = bg;//floor((1.0 - bg) * 4.0) / 3.0;
+  float border = line(0.05, 0.67, d);
+
+  float body = S(0.7, 0.65, d);
+  
+  gl_FragColor = vec4(body * bright, body * bright, body * bright, 1.0);
   // vec4 diffuseColor = texture2D(map, vUv);
   // gl_FragColor = vec4(diffuseColor.xyz * HSLtoRGB(vec3(vScale / 5.0, 1.0,
   // 0.5)),
