@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Test</title>
+  </head>
+  <body>
+    <canvas id="myCanvas" width="500" height="500" style="border:1px solid #000000;">
+    </canvas> 
+    <!-- <textarea class="emscripten" id="output" rows="8"></textarea> -->
+    <script async type="text/javascript" src="main.js"></script>
+    <script async type="text/javascript" src="bactorial_wasm_loader.js"></script>
+    <script type='text/javascript'>
+      var canvas = document.getElementById("myCanvas");
+      var context = canvas.getContext("2d");
+      var dT = 16;
+
+      function sleep(ms) {
+        ms += new Date().getTime();
+        while (new Date() < ms){}
+      } 
+
+      function doFrame() {
+        var tick = dT / 100000.0;
+        Module._BactorialUpdateWorld(tick);
+
+        globals.objects = [];
+        loadState();
+
+        context.fillStyle = "#000000"; 
+        context.fillRect(0, 0, 500, 500);
+
+        for (i=0; i < globals.objects.length; i++) {
+          var object = globals.objects[i];
+          context.fillStyle = "#ff33ff"; 
+          context.fillRect(object.x, object.y, 5, 5);
+        }
+
+        sleep(16);
+      }
+    </script>
+  </body>
+</html>
+
+
