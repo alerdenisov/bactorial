@@ -4,15 +4,15 @@ uniform sampler2D map;
 uniform float time;
 
 varying vec2 vUv;
-varying float vIndex;
+varying vec2 vIndex;
 
 #define S(a, b, c) smoothstep(a, b, c)
 #define saturate(a) clamp(a, 0.0, 1.0)
 #define SLIDE 7.5
 #define SLIDE2 .45
-#define SPREAD .13
-#define SIZE 16.
-#define STEPS 3
+#define SPREAD .05
+#define SIZE 32.
+#define STEPS 2
 #define NOISE_SIZE 8.
 #define SHINESS 2.2
 
@@ -81,7 +81,7 @@ void main() {
   // );
   // return;
 
-  float r = noise(vUv * SIZE + vIndex * SIZE + time * SLIDE);
+  float r = noise(vUv * SIZE + vIndex.x * SIZE + time * SLIDE);
   float d = saturate(length(vUv * 2.0 - 1.0) * 1.85 + r * SPREAD);
   float bg = 1. - pow(d, SHINESS);
   bg = length(vUv * 2.0 - 1.0);
@@ -90,12 +90,14 @@ void main() {
   // 1.0))));
 
   vec2 p = vUv * 2.0 - 1.0;
-  vec2 v = normalize(vec2(1.0, 1.0)) * fract(time);
+  vec2 v = normalize(vec2(1.0, 1.0)) * sin(time * 3.);
   float vp = length(v);
   // bg = bg;// * abs(dot(p, v));
 
-  float s1 = sphere(p, 0.45);
-  float s2 = sphere(p + v * .75, (1. - vp) * 0.45);
+  #define SIZE_BODY 0.35
+
+  float s1 = sphere(p, SIZE_BODY);
+  float s2 = sphere(p + v * (1. - SIZE_BODY), (1. - vp) * SIZE_BODY);
 
   bg = smoothDistance(s1, s2, .65);
   bg += r * SPREAD;
@@ -111,7 +113,8 @@ void main() {
   // gl_FragColor = vec4(bg * mask, bg * mask, bg * mask, 1.0);
 
 
-  vec3 dark = vec3(1., .388, .490);
+  vec3 dark = vec3(.975, 0.274, .388);
+  // vec3 dark = vec3(1., .388, .490);
   vec3 light = vec3(.988, .917, .929);
   vec3 col = mix(dark, light, bg);
   gl_FragColor = vec4(col * mask, 1.0);

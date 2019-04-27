@@ -7,11 +7,11 @@ uniform float time;
 attribute vec3 position;
 attribute vec2 uv;
 attribute vec2 translate;
-attribute float seed;
+attribute vec2 seed;
 
 varying vec2 vUv;
 varying float vScale;
-varying float vIndex;
+varying vec2 vIndex;
 
 void main() {
 

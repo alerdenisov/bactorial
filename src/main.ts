@@ -1,16 +1,16 @@
 import THREE = require('three');
-import bacteria_frag from './shaders/bacteria.frag';
+import bacteria_body_frag from './shaders/bacteria-body.frag';
+import bacteria_dots_frag from './shaders/bacteria-dots.frag';
 import bacteria_vert from './shaders/bacteria.vert';
 
-console.log(bacteria_frag, bacteria_vert)
-
-    class Game {
+class Game {
   private container: HTMLElement;
   private camera: THREE.PerspectiveCamera;
   private scene: THREE.Scene;
   private renderer: THREE.WebGLRenderer;
   private geometry: THREE.InstancedBufferGeometry;
   private material: THREE.RawShaderMaterial;
+  private material_dots: THREE.RawShaderMaterial;
   private mesh: THREE.Mesh;
 
   constructor(private COUNT = 100, private DISTANCE = 50) {
@@ -20,7 +20,7 @@ console.log(bacteria_frag, bacteria_vert)
   }
 
   init() {
-    const seed = new Float32Array(this.COUNT);
+    const seed = new Float32Array(this.COUNT * 2);
     const positions = new Float32Array(this.COUNT * 2);
     const side = Math.sqrt(this.COUNT);
     for (let x = 0; x < side; x++) {
@@ -29,7 +29,8 @@ console.log(bacteria_frag, bacteria_vert)
         positions[index * 2 + 0] = x * this.DISTANCE * 2
         positions[index * 2 + 1] = y * this.DISTANCE * 2
 
-        seed[index] = Math.random();
+        seed[index * 2 + 0] = Math.random() * 2. - 1.;
+        seed[index * 2 + 1] = Math.random() * 2. - 1.;
       }
     }
 
@@ -45,7 +46,7 @@ console.log(bacteria_frag, bacteria_vert)
     this.container = document.createElement('div');
     document.body.appendChild(this.container);
     this.camera = new THREE.PerspectiveCamera(
-        20, window.innerWidth / window.innerHeight, 1, 5000);
+        10, window.innerWidth / window.innerHeight, 1, 5000);
 
     this.camera.position.z = 1400;
 
@@ -60,7 +61,7 @@ console.log(bacteria_frag, bacteria_vert)
     this.geometry.addAttribute(
         'translate', new THREE.InstancedBufferAttribute(positions, 2));
     this.geometry.addAttribute(
-        'seed', new THREE.InstancedBufferAttribute(seed, 1));
+        'seed', new THREE.InstancedBufferAttribute(seed, 2));
 
     this.material = new THREE.RawShaderMaterial({
       uniforms: {
@@ -70,14 +71,32 @@ console.log(bacteria_frag, bacteria_vert)
         time: {value: 0.0}
       },
       vertexShader: bacteria_vert,
-      fragmentShader: bacteria_frag,
+      fragmentShader: bacteria_body_frag,
+      depthTest: true,
+      depthWrite: true
+    });
+
+    this.material_dots = new THREE.RawShaderMaterial({
+      uniforms: {
+        map: {
+          value: new THREE.TextureLoader().load('assets/sprites/circle.png')
+        },
+        time: {value: 0.0}
+      },
+      vertexShader: bacteria_vert,
+      fragmentShader: bacteria_dots_frag,
       depthTest: true,
       depthWrite: true
     });
 
     this.material.blending = THREE.AdditiveBlending;
+    this.material_dots.blending = THREE.AdditiveBlending;
 
     this.mesh = new THREE.Mesh(this.geometry, this.material);
+    this.mesh.scale.set(1, 1, 1);
+    this.scene.add(this.mesh);
+    
+    this.mesh = new THREE.Mesh(this.geometry, this.material_dots);
     this.mesh.scale.set(1, 1, 1);
     this.scene.add(this.mesh);
 
@@ -105,6 +124,7 @@ console.log(bacteria_frag, bacteria_vert)
   render() {
     var time = performance.now() * 0.0005;
     this.material.uniforms['time'].value = time;
+    this.material_dots.uniforms['time'].value = time;
     // this.mesh.rotation.x = time * 0.2;
     // this.mesh.rotation.y = time * 0.4;
     this.renderer.render(this.scene, this.camera);
