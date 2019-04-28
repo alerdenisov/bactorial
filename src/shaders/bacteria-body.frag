@@ -5,16 +5,20 @@ uniform float time;
 
 varying vec2 vUv;
 varying vec2 vIndex;
+varying vec2 vVelocity;
 
 #define S(a, b, c) smoothstep(a, b, c)
 #define saturate(a) clamp(a, 0.0, 1.0)
-#define SLIDE 7.5
-#define SLIDE2 .45
-#define SPREAD .05
-#define SIZE 32.
+#define SLIDE_MIN .3
+#define SLIDE_MAX 1.
+#define SPREAD_MIN .02
+#define SPREAD_MAX .15
+#define SIZE 8.
 #define STEPS 2
 #define NOISE_SIZE 8.
-#define SHINESS 2.2
+#define SHINESS 3.
+
+#define PI 3.14159265359
 
 // float N21(vec2 p) { return fract(sin(p.x * 100. + p.y * 6574.) * 5647.); }
 
@@ -63,6 +67,14 @@ float sphere(vec2 p, float r) {
 }
 
 void main() {
+  vec2 vel = vVelocity / 20000.0;
+  float speed = length(vel);
+  vec2 dir = vel / speed;
+  float s01 = saturate(speed);
+  float spread = mix(SPREAD_MIN, SPREAD_MAX, s01);
+  float slide = mix(SLIDE_MIN, SLIDE_MAX, s01);
+  // gl_FragColor = vec4(speed, speed, speed, 1.);
+  // return;
   // // gl_FragColor = vec4(vIndex, vIndex, vIndex, 1.0);
   // // return;
   // float r1 = noise(fract(vUv + time * SLIDE));
@@ -81,8 +93,8 @@ void main() {
   // );
   // return;
 
-  float r = noise(vUv * SIZE + vIndex.x * SIZE + time * SLIDE);
-  float d = saturate(length(vUv * 2.0 - 1.0) * 1.85 + r * SPREAD);
+  float r = noise(vUv * SIZE + time * dir * slide);// + vIndex.x * SIZE + time * SLIDE);
+  float d = saturate(length(vUv * 2.0 - 1.0) * 1.85);
   float bg = 1. - pow(d, SHINESS);
   bg = length(vUv * 2.0 - 1.0);
   // bg = min(bg, length(vUv * 2.0 - 1.0 + vec2(1.0, 1.0) * fract(time)));
@@ -90,7 +102,7 @@ void main() {
   // 1.0))));
 
   vec2 p = vUv * 2.0 - 1.0;
-  vec2 v = normalize(vec2(1.0, 1.0)) * sin(time * 3.);
+  vec2 v = vel;//normalize(vec2(1.0, 1.0)) * sin(time * PI);
   float vp = length(v);
   // bg = bg;// * abs(dot(p, v));
 
@@ -100,12 +112,13 @@ void main() {
   float s2 = sphere(p + v * (1. - SIZE_BODY), (1. - vp) * SIZE_BODY);
 
   bg = smoothDistance(s1, s2, .65);
-  bg += r * SPREAD;
+  bg += r * spread;
   bg = S(0.15, -0.25, bg);
   
   float mask = S(0.15, 0.25, bg);
   // bg = s2;
 
+  bg = pow(bg, SHINESS);
   bg *= float(STEPS + 1);
   bg = floor(bg);
   bg /= float(STEPS); // pow(d, 2.5);

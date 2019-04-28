@@ -35,8 +35,10 @@
   },
   "dependencies": {
     "@types/three": "^0.103.2",
+    "boids": "^2.0.0",
     "copy-webpack-plugin": "^5.0.3",
     "raw-loader": "^2.0.0",
+    "stats-js": "^1.0.1",
     "three": "^0.104.0"
   }
 }
