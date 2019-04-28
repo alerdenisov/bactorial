@@ -9,6 +9,7 @@ attribute vec2 uv;
 attribute vec2 translate;
 attribute vec2 velocity;
 attribute vec2 seed;
+attribute float radius;
 
 varying vec2 vUv;
 varying float vScale;
@@ -23,7 +24,13 @@ void main() {
 //   float scale = sin(trTime.x * 2.1) + sin(trTime.y * 3.2) + sin(trTime.z * 4.3);
 //   vScale = scale;
 //   scale = scale * 10.0 + 10.0;
-  mvPosition.xyz += position * 40.;// * 1.0;
+  vec2 vel = velocity / 20000.0;
+  float speed = max(0.0001, length(vel));
+
+  // float coef = min(2.0, max(0.0, pow(-dot(normalize(velocity), normalize(position.xy)), 5.))) * speed;
+
+  // mvPosition.xyz += position * (40. + 80. * coef);// * 1.0;
+  mvPosition.xyz += position * radius;// + 80. * coef);// * 1.0;
   vUv = uv;
 
   vIndex = seed;

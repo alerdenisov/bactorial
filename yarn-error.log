@@ -1,5 +1,5 @@
 Arguments: 
-  /usr/local/bin/node /usr/local/bin/yarn add @types/stats-js
+  /usr/local/bin/node /usr/local/bin/yarn add hecs
 
 PATH: 
   /Users/aler2/.rvm/gems/ruby-2.6.0/bin:/Users/aler2/.rvm/gems/ruby-2.6.0@global/bin:/Users/aler2/.rvm/rubies/ruby-2.6.0/bin:/usr/local/opt/ruby/bin:/usr/local/opt/openssl/bin:/Users/aler2/.cargo/bin:/Users/aler2/.cargo/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Library/TeX/texbin:/usr/local/share/dotnet:~/.dotnet/tools:/Users/aler2/go/bin:/Users/aler2/.rvm/bin
@@ -14,17 +14,17 @@ Platform:
   darwin x64
 
 Trace: 
-  Error: https://registry.yarnpkg.com/@types%2fstats-js: Not found
-      at Request.params.callback [as _callback] (/usr/local/lib/node_modules/yarn/lib/cli.js:66255:18)
-      at Request.self.callback (/usr/local/lib/node_modules/yarn/lib/cli.js:129397:22)
+  Error: https://registry.yarnpkg.com/hecs/-/hecs-0.1.1.tgz: Request failed "503 Service Unavailable"
+      at ResponseError.ExtendableBuiltin (/usr/local/lib/node_modules/yarn/lib/cli.js:702:66)
+      at new ResponseError (/usr/local/lib/node_modules/yarn/lib/cli.js:808:124)
+      at Request.<anonymous> (/usr/local/lib/node_modules/yarn/lib/cli.js:66325:16)
       at Request.emit (events.js:182:13)
-      at Request.<anonymous> (/usr/local/lib/node_modules/yarn/lib/cli.js:130369:10)
-      at Request.emit (events.js:182:13)
-      at IncomingMessage.<anonymous> (/usr/local/lib/node_modules/yarn/lib/cli.js:130291:12)
-      at Object.onceWrapper (events.js:273:13)
-      at IncomingMessage.emit (events.js:187:15)
-      at endReadableNT (_stream_readable.js:1094:12)
-      at process._tickCallback (internal/process/next_tick.js:63:19)
+      at Request.module.exports.Request.onRequestResponse (/usr/local/lib/node_modules/yarn/lib/cli.js:130274:10)
+      at ClientRequest.emit (events.js:187:15)
+      at HTTPParser.parserOnIncomingClient (_http_client.js:555:21)
+      at HTTPParser.parserOnHeadersComplete (_http_common.js:109:17)
+      at TLSSocket.socketOnData (_http_client.js:441:20)
+      at TLSSocket.emit (events.js:182:13)
 
 npm manifest: 
   {

@@ -82,7 +82,10 @@ float box(vec2 p, vec2 b)
 }
 
 void main() {
-  vec2 vel = vVelocity / 20000.0;
+  vec2 vel = vVelocity / 2.0;
+  // gl_FragColor = vec4(vVelocity, 0., 1.);
+  // return;
+
   float speed = max(0.0001, length(vel));
   vec2 dir = vel / speed;
   float s01 = saturate(speed);
