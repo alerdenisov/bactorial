@@ -20,6 +20,15 @@ varying vec2 vVelocity;
 
 #define PI 3.14159265359
 
+#define ADD(a,b) min(a,b)
+// #define ADD(a,b,c) ADD(c, ADD(a,b))
+// #define ADD(a,b,c,d) ADD(d,ADD(a,b,c))
+// #define ADD(a,b,c,d,e) ADD(e,ADD(a,b,c,d))
+#define SUB(a,b) max(-a,b)
+// #define SUB(a,b,c) max(-c, SUB(a,b))
+// #define SUB(a,b,c,d) max(d, SUB(a,b,c))
+// #define SUB(a,b,c,d,e) max(e, SUB(a,b,c,e))
+
 // float N21(vec2 p) { return fract(sin(p.x * 100. + p.y * 6574.) * 5647.); }
 
 vec2 hash(vec2 x) // replace this by something better
@@ -66,9 +75,15 @@ float sphere(vec2 p, float r) {
   return length(p) - r;
 }
 
+float box(vec2 p, vec2 b)
+{
+    vec2 d = abs(p)-b;
+    return length(max(d,vec2(0.0))) + min(max(d.x,d.y),0.0);
+}
+
 void main() {
   vec2 vel = vVelocity / 20000.0;
-  float speed = length(vel);
+  float speed = max(0.0001, length(vel));
   vec2 dir = vel / speed;
   float s01 = saturate(speed);
   float spread = mix(SPREAD_MIN, SPREAD_MAX, s01);
@@ -109,13 +124,32 @@ void main() {
   #define SIZE_BODY 0.35
 
   float s1 = sphere(p, SIZE_BODY);
-  float s2 = sphere(p + v * (1. - SIZE_BODY), (1. - vp) * SIZE_BODY);
+  float s2 = sphere(p + v * 0.7, (1. - vp) * SIZE_BODY);
 
   bg = smoothDistance(s1, s2, .65);
   bg += r * spread;
   bg = S(0.15, -0.25, bg);
   
   float mask = S(0.15, 0.25, bg);
+
+  #define EYE_SPREAD 0.15
+  #define EYE_SIZE 0.05
+  #define EYE_VELOCITY_COEF 0.25
+  #define SHAKE_POWER 0.05
+
+  vec2 face_offset = -vel * EYE_VELOCITY_COEF;
+  float eye1 = sphere(p - vec2(EYE_SPREAD, 0.0) + face_offset, EYE_SIZE) + r * SHAKE_POWER;
+  float eye2 = sphere(p + vec2(EYE_SPREAD, 0.0) + face_offset, EYE_SIZE) + r * SHAKE_POWER;
+  // float month = SUB(sphere(p + vec2(0.0, 0.15), 0.2), box(p + vec2(0.0, 0.15) - vel * EYE_VELOCITY_COEF, vec2(0.08, 0.02))) + r * SHAKE_POWER;
+  float month_shape = sphere(p + vec2(0.0, 0.1) + face_offset, 0.08 * (1. - s01)) + r * SHAKE_POWER;//, box(p + vec2(0.0, 0.15) - vel * EYE_VELOCITY_COEF, vec2(0.08, 0.02))) + r * SHAKE_POWER;
+  float month_cut = box(p + vec2(0.0, 0.05) + face_offset, vec2(0.2, 0.05));
+
+  float month = SUB(month_cut, month_shape);
+
+  float eyes = 1.0 - S(0.01, 0.0, ADD(month, ADD(eye1, eye2)));
+  mask *= eyes;
+  // gl_FragColor = vec4(eyes,eyes,eyes,1.0);
+  // return;
   // bg = s2;
 
   bg = pow(bg, SHINESS);
@@ -130,6 +164,7 @@ void main() {
   // vec3 dark = vec3(1., .388, .490);
   vec3 light = vec3(.988, .917, .929);
   vec3 col = mix(dark, light, bg);
+
   gl_FragColor = vec4(col * mask, 1.0);
   // vec3 col2 = mix(vec3(0.0), dark, r1);
   // // gl_FragColor = vec4(fract(bg), 0.0, 0.0, 1.0);
