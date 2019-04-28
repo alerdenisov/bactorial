@@ -22,7 +22,7 @@
       } 
 
       function doFrame() {
-        var tick = dT / 100000.0;
+        var tick = dT;
         Module._BactorialUpdateWorld(tick);
 
         globals.objects = [];
@@ -34,8 +34,15 @@
         for (i=0; i < globals.objects.length; i++) {
           var object = globals.objects[i];
           context.fillStyle = "#ff33ff"; 
-          context.fillRect(object.x, object.y, 5, 5);
+          context.beginPath();
+          context.arc(object.x + 250.0, object.y + 250.0, object.radius, 0, 2 * Math.PI);
+          context.fill();
         }
+
+        
+        // bactorialDivide();
+        Module._BactorialDivide();
+        Module._BactorialSelect(-250.0, -250.0, 250.0, 250.0);
 
         sleep(16);
       }
