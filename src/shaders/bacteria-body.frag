@@ -110,9 +110,11 @@ void main() {
   float vDead = abs(vState - 3.0) < 0.01 ? 1.0 : 0.0;
 
   if (vDead > 0.0) {
-    gl_FragColor = vec4(1., 0., 0., 1.);
-    return;
+    discard;
   }
+    
+  //   gl_FragColor = vec4(1., 0., 0., 1.);
+  //   return;
   // if(vDivide > 0.0) {
   //   gl_FragColor = vec4(1.0, vState, 0., 1.);
   //   return;
@@ -146,7 +148,7 @@ void main() {
 
 
 
-  float r = noise(vUv * SIZE + time * dir * slide);// + vIndex.x * SIZE + time * SLIDE);
+  float r = noise(vUv * SIZE + time * dir * slide) * (1.0 - vDead);// + vIndex.x * SIZE + time * SLIDE);
   // float d = saturate(length(vUv * 2.0 - 1.0) * 1.85);
   // bg = length(vUv * 2.0 - 1.0);
   // bg = min(bg, length(vUv * 2.0 - 1.0 + vec2(1.0, 1.0) * fract(time)));
@@ -180,8 +182,8 @@ void main() {
     float box2 = box(rotate(p, PI * 0.25 + time), vec2(.45, .45));
     bg = smoothDistance(box1, box2, .1);
   } else {
-    float div1 = sphere(p + -vSeed * ft * 0.35, SIZE_BODY * (1. - ft * 0.5));
-    float div2 = sphere(p + vSeed * ft * 0.35, SIZE_BODY * (1. - ft * 0.5));
+    float div1 = sphere(p + -vSeed * ft * 0.3, SIZE_BODY * (1. - ft * 0.5));
+    float div2 = sphere(p + vSeed * ft * 0.3, SIZE_BODY * (1. - ft * 0.5));
     // float box1 = box(p, vec2(.35, .35));
     // float s1 = smoothDistance(box1, box2, 0.1);//, .1);//sphere(p, SIZE_BODY + divideBodyShake);
     float s1 = sphere(p, SIZE_BODY + divideBodyShake);
@@ -211,7 +213,7 @@ void main() {
   #define SHAKE_POWER 0.075
   if (abs(vEnemy - 1.0) < 0.001) {
 
-  } else {
+  } else if (vDead <= 0.0) {
     vec2 face_offset = -vel * EYE_VELOCITY_COEF;
     float eye1 = sphere(p - vec2(EYE_SPREAD, 0.0) + face_offset, EYE_SIZE) + r * SHAKE_POWER;
     float eye2 = sphere(p + vec2(EYE_SPREAD, 0.0) + face_offset, EYE_SIZE) + r * SHAKE_POWER;
@@ -224,7 +226,7 @@ void main() {
     mask *= eyes;
   }
 
-  // gl_FragColor = vec4(eyes,eyes,eyes,1.0);
+
   // return;
   // bg = s2;
 
@@ -238,10 +240,34 @@ void main() {
   vec3 enemyDark = vec3(.03, 0.160, .05);
   vec3 enemyLight = vec3(.65, 0.94, .54);
 
+  vec3 deadDark = vec3(.078, 0.082, .113);
+  vec3 deadLight = vec3(.0, .0, .009);
+
   vec3 dark = mix(vec3(1., 0.388, .501), vec3(.988, .917, .929), vSelected);
   vec3 light = mix(vec3(.988, .917, .929), vec3(1., 0.388, .501), vSelected);
 
-  vec3 col = mix(mix(dark, enemyDark, vEnemy), mix(light, enemyLight, vEnemy), bg);
+  vec3 deadColor = mix(deadDark, deadLight, bg);
+  vec3 col = mix(mix(mix(dark, enemyDark, vEnemy), mix(light, enemyLight, vEnemy), bg), deadColor, vDead);
+
+
+  if (vDead > 0.0) {
+    float eye1b1 = box(rotate(p - vec2(EYE_SPREAD, 0.0), PI * 0.25), vec2(EYE_SIZE, EYE_SIZE * 0.25));
+    float eye1b2 = box(rotate(p - vec2(EYE_SPREAD, 0.0), PI * -0.25), vec2(EYE_SIZE, EYE_SIZE * 0.25));
+    float eye2b1 = box(rotate(p + vec2(EYE_SPREAD, 0.0), PI * 0.25), vec2(EYE_SIZE, EYE_SIZE * 0.25));
+    float eye2b2 = box(rotate(p + vec2(EYE_SPREAD, 0.0), PI * -0.25), vec2(EYE_SIZE, EYE_SIZE * 0.25));
+    
+    float eye1 = ADD(eye1b1, eye1b2) + r * SHAKE_POWER * 0.3;
+    float eye2 = ADD(eye2b1, eye2b2) + r * SHAKE_POWER * 0.3;
+
+    float face = S(0.01, 0.0, ADD(eye1, eye2));
+    // gl_FragColor = vec4(face,face,face,1.0);
+    // return;
+    col.x += face;
+    col.y += face;
+    col.z += face;
+
+    // mask -= face;
+  }
 
   gl_FragColor = vec4(col, mask);
   // vec3 col2 = mix(vec3(0.0), dark, r1);
