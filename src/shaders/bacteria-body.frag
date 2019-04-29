@@ -219,7 +219,7 @@ void main() {
     float eye2 = sphere(p + vec2(EYE_SPREAD, 0.0) + face_offset, EYE_SIZE) + r * SHAKE_POWER;
     // float month = SUB(sphere(p + vec2(0.0, 0.15), 0.2), box(p + vec2(0.0, 0.15) - vel * EYE_VELOCITY_COEF, vec2(0.08, 0.02))) + r * SHAKE_POWER;
     float month_shape = sphere(p + vec2(0.0, 0.1) + face_offset, 0.08 * (1. - s01)) + r * SHAKE_POWER;//, box(p + vec2(0.0, 0.15) - vel * EYE_VELOCITY_COEF, vec2(0.08, 0.02))) + r * SHAKE_POWER;
-    float month_cut = box(p + vec2(0.0, 0.05) + face_offset, vec2(0.2, 0.05));
+    float month_cut = box(p + vec2(0.0, 0.) + face_offset, vec2(0.2, 0.1));
     float month = SUB(month_cut, month_shape);
     float eyes = 1.0 - S(0.01, 0.0, ADD(month, ADD(eye1, eye2)));
     

@@ -102,10 +102,27 @@ class Game {
     backend._BactorialSpawnEnemy(
         300, 30 + Math.pow(Math.random(), 2.2) * 60, 1, 1);
     setTimeout(
-        this.spawnEnemy.bind(this), 1000 + Math.max(0, 5000 - this.clock.getElapsedTime() * 100));
+        this.spawnEnemy.bind(this),
+        1000 + Math.max(0, 5000 - this.clock.getElapsedTime() * 100));
   }
 
   onClick(event: MouseEvent) {
+
+    const listener = new THREE.AudioListener();
+    this.camera.add(listener);
+
+    // create a global audio source
+    const sound = new THREE.Audio(listener);
+
+    // load a sound and set it as the Audio object's buffer
+    const audioLoader = new THREE.AudioLoader();
+    audioLoader.load('assets/sounds/music.mp3', function(buffer: THREE.AudioBuffer) {
+      sound.setBuffer(buffer);
+      sound.setLoop(true);
+      sound.setVolume(0.5);
+      sound.play();
+    }, null, null);
+    
     event.preventDefault();
 
     const x = (event.clientX / this.container.clientWidth) * 2 - 1;
@@ -149,6 +166,7 @@ class Game {
     this.radiuses = new Float32Array(this.COUNT);
     this.states = new Float32Array(this.COUNT * 4);
     this.labels = new Array(this.COUNT);
+
 
     // this.world = this.setupWorld();
     this.renderer = new THREE.WebGLRenderer();
@@ -285,7 +303,7 @@ class Game {
         this.seed[index * 2 + 0] = Math.random() * 2 - 1;
         this.seed[index * 2 + 1] = Math.random() * 2 - 1;
 
-        // var labelDiv = document.createElement('div');
+        // const labelDiv = document.createElement('div');
         // labelDiv.className = 'label';
         // labelDiv.textContent = 'Earth';
         // // labelDiv.style.marginTop = '-1em';
@@ -396,24 +414,47 @@ class Game {
     // }
   }
 
-  // updateCamera(dt: number) {
-  //   const ratio = window.innerWidth / window.innerHeight;
-  //   const ortho = (this.camera as OrthographicCamera);
-
-  //   const colonyWidth = this.boundingBoxMax.x - this.boundingBoxMin.x;
-  //   const colonyHeight = this.boundingBoxMax.y - this.boundingBoxMin.y;
-
-  //   const size = colonyHeight / ratio > colonyWidth ? colonyHeight :
-  //   colonyWidth / ratio;
-
-  //   ortho.left = this.boundingBox.min.x;
-  //   ortho.right = this.boundingBox.max.x;
-  //   ortho.bottom = this.boundingBox.min.y;
-  //   ortho.top = this.boundingBox.max.y;
-  //   ortho.updateProjectionMatrix();
-
-  // }
   updateCamera(dt: number) {
+    /*
+
+    w 10
+    h 5
+    r 2
+
+    10 x 3
+
+    5 x 3
+
+    5 10
+
+
+    */
+
+
+    const ratio = window.innerWidth / window.innerHeight;
+    const ortho = (this.camera as OrthographicCamera);
+
+    const colonyWidth = Math.abs(this.boundingBoxMax.x - this.boundingBoxMin.x);
+    const colonyHeight =
+        Math.abs(this.boundingBoxMax.y - this.boundingBoxMin.y);
+
+    let size =
+        colonyHeight / ratio > colonyWidth ? colonyHeight : colonyWidth / ratio;
+    size *= 2.5;
+    size = Math.max(100, size);
+
+    const centerX = this.boundingBox.min.x * .5 + this.boundingBox.max.x * .5;
+    const centerY = this.boundingBox.min.y * .5 + this.boundingBox.max.y * .5;
+    ortho.position.set(centerX, centerY, 0);
+
+    ortho.left = THREE.Math.lerp(ortho.left, -size * ratio, dt * 3.0);
+    ortho.right = THREE.Math.lerp(ortho.right, size * ratio, dt * 3.0);
+    ortho.bottom = THREE.Math.lerp(ortho.bottom, -size, dt * 3.0);
+    ortho.top = THREE.Math.lerp(ortho.top, size, dt * 3.0);
+
+    ortho.updateProjectionMatrix();
+  }
+  updateCamera_centered(dt: number) {
     const ratio = window.innerWidth / window.innerHeight;
     const ortho = this.camera as OrthographicCamera;
 

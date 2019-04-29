@@ -114,7 +114,7 @@ void main() {
   // ╚═════╝  ╚═════╝ ╚═════╝    ╚═╝   
 
   #define SIZE_BODY 0.35         
-  #define EYE_SPREAD 0.15
+  #define EYE_SPREAD 0.075
   #define EYE_SIZE 0.05
   #define EYE_VELOCITY_COEF 0.25
   #define SHAKE_POWER 0.075
