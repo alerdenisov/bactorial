@@ -2510,11 +2510,6 @@ hawk@~3.1.3:
     hoek "2.x.x"
     sntp "1.x.x"
 
-hecs@^0.1.1:
-  version "0.1.1"
-  resolved "https://registry.yarnpkg.com/hecs/-/hecs-0.1.1.tgz#86131abaa4988fb61413c4d34deddcb71d8681a1"
-  integrity sha512-TM2hPyFAxwYd+YpPwZzji8c+gY1m3mwaPwYFRcljL3DM3pOkisS/sYVNzu3LgocRxJZ/7YcyoYT2Ns0yohWBGQ==
-
 hipchat-notifier@^1.1.0:
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/hipchat-notifier/-/hipchat-notifier-1.1.0.tgz#b6d249755437c191082367799d3ba9a0f23b231e"
