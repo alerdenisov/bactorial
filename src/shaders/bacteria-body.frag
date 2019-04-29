@@ -6,10 +6,9 @@ uniform float time;
 // varying vec2 vUv;
 // varying vec2 vIndex;
 // varying vec2 vVelocity;
-// varying vec4 vState;
-
 varying vec4 vParams1;
 varying vec4 vParams2;
+varying vec4 vParams3;
 
 #define S(a, b, c) smoothstep(a, b, c)
 #define saturate(a) clamp(a, 0.0, 1.0)
@@ -91,13 +90,22 @@ float box(vec2 p, vec2 b)
 // }
 
 void main() {
+  float vState = vParams3.x;
   vec2 vUv = vParams1.xy;
+  vec2 vSeed = vParams1.zw;
   vec2 vel = vParams2.xy / 15.0;
   float vEnemy = 1.0 - vParams2.z;
   float vSelected = vParams2.w;
+  float vIdle = abs(vState - 0.0) < 0.01 ? 1.0 : 0.0;
+  float vDivide = abs(vState - 1.0) < 0.01 ? 1.0 : 0.0;
+  float vAttack = abs(vState - 2.0) < 0.01 ? 1.0 : 0.0;
+  float vDead = abs(vState - 3.0) < 0.01 ? 1.0 : 0.0;
+
+  // if(vDivide > 0.0) {
+  //   gl_FragColor = vec4(1.0, vState, 0., 1.);
+  //   return;
+  // } 
   
-  // gl_FragColor = vec4(vVelocity, 0., 1.);
-  // return;
 
   float speed = max(0.0001, length(vel));
   vec2 dir = vel / speed;
@@ -140,23 +148,24 @@ void main() {
   #define SIZE_BODY 0.35
 
 
-  float dt = fract(time / 3.);
-  float ft = sin(dt * 32.) * dt;
-  // float div1 = sphere(p + vec2(-ft, 0) * 0.5, SIZE_BODY * (1. - ft * 0.5));
-  // float div2 = sphere(p + vec2(ft, 0) * 0.5, SIZE_BODY * (1. - ft * 0.5));
+  float elapsed = (time - vParams3.y);
+  float dt = fract(elapsed);
+  float ft = sin(dt * 8.) * (dt * 2.1);
+  float div1 = sphere(p + -vSeed * ft * 0.35, SIZE_BODY * (1. - ft * 0.5));
+  float div2 = sphere(p + vSeed * ft * 0.35, SIZE_BODY * (1. - ft * 0.5));
 
-  float status = 0.0;
-  float divide = abs(1.0 - status) < 0.01 ? 1.0 : 0.0;//vStatus.x);
-  float idle = abs(0.0 - status) < 0.01 ? 1.0 : 0.0;
+  float divide = vDivide;//abs(1.0 - status) < 0.01 ? 1.0 : 0.0;//vStatus.x);
+  float idle = vIdle;//abs(0.0 - status) < 0.01 ? 1.0 : 0.0;
 
-  float divideBodyShake = ft * 0.3 * divide;
+  float divideBodyShake = ft * 0.2 * divide;
 
   float s1 = sphere(p, SIZE_BODY + divideBodyShake);
   float s2 = sphere(p + v * 0.7, (1. - vp) * SIZE_BODY);
 
-  bg = smoothDistance(s1, s2, .65);
-  // bg = smoothDistance(div1, div2, 0.7);//, smoothDistance(s1, s2, .65), saturate(ft));
-  bg += r * mix(1.0, spread, idle) * mix(1.0, ft, divide);
+
+  bg = mix(smoothDistance(s1, s2, .65), smoothDistance(div1, div2, 0.7), vDivide);//, smoothDistance(s1, s2, .65), saturate(ft));
+
+  bg += r * mix(1.0, spread, idle) * mix(1.0, ft * divideBodyShake, divide);
   bg = S(0.15, -0.25, bg);
   
   float mask = S(0.15, 0.25, bg);
@@ -190,12 +199,12 @@ void main() {
   vec3 enemyDark = vec3(.635, 0.160, .0);
   vec3 enemyLight = vec3(1., 1., .929);
 
-  vec3 dark = mix(vec3(.975, 0.274, .388), vec3(.988, .917, .929), vSelected);
-  vec3 light = mix(vec3(.988, .917, .929), vec3(.975, 0.274, .388), vSelected);
+  vec3 dark = mix(vec3(1., 0.388, .501), vec3(.988, .917, .929), vSelected);
+  vec3 light = mix(vec3(.988, .917, .929), vec3(1., 0.388, .501), vSelected);
 
   vec3 col = mix(mix(dark, enemyDark, vEnemy), mix(light, enemyLight, vEnemy), bg);
 
-  gl_FragColor = vec4(col * mask, 1.0);
+  gl_FragColor = vec4(col, mask);
   // vec3 col2 = mix(vec3(0.0), dark, r1);
   // // gl_FragColor = vec4(fract(bg), 0.0, 0.0, 1.0);
   // // gl_FragColor = vec4(mask, mask, mask, 1.0);

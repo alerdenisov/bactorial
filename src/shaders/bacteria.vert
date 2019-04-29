@@ -14,12 +14,12 @@ attribute vec4 state;
 
 varying vec4 vParams1;
 varying vec4 vParams2;
+varying vec4 vParams3;
 // varying float vScale;
 // varying vec2 vIndex;
 // varying vec2 vVelocity;
 // varying float vEnemy;
 // varying float vSelected;
-// varying float vState;
 
 void main() {
   vec4 mvPosition = modelViewMatrix * vec4(translate.xy, 0.0, 1.0);
@@ -34,10 +34,11 @@ void main() {
   // float coef = min(2.0, max(0.0, pow(-dot(normalize(velocity), normalize(position.xy)), 5.))) * speed;
 
   // mvPosition.xyz += position * (40. + 80. * coef);// * 1.0;
-  mvPosition.xyz += position * 5. * sqrt(radius);// + 80. * coef);// * 1.0;
+  mvPosition.xyz += position * 1.6 * radius;// + 80. * coef);// * 1.0;
 
   vParams1 = vec4(uv, seed);
   vParams2 = vec4(velocity, state.x, state.y);
+  vParams3 = vec4(state.z, state.w, 0., 0.);
   // vIndex = seed;
   // vVelocity = velocity;
 
