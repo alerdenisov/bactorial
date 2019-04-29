@@ -70,13 +70,27 @@ class Game {
   velocities: Float32Array;
   radiuses: Float32Array;
   targets: Float32Array;
+  states: Float32Array;
   inited: boolean;
   labels: any[];
 
   COUNT: number;
   labelRenderer: any;
 
-  constructor(private SIDE = 10, private DISTANCE = 30) {
+  
+  onClick(event: MouseEvent){ 
+    event.preventDefault();
+
+    const x = (event.clientX / this.container.clientWidth) * 2 - 1;
+    const y = (event.clientY / this.container.clientHeight) * 2 - 1;
+
+    const wpos = new THREE.Vector3(x, -y, 1).unproject(this.camera);
+    const size = 5;
+    backend._BactorialSelect(wpos.x - size, wpos.y - size, wpos.x + size, wpos.y + size);
+    backend._BactorialDivide();
+  }
+
+  constructor(private SIDE = 15, private DISTANCE = 30) {
     this.COUNT = SIDE * SIDE;
     if (this.init()) {
       this.animate();
@@ -91,6 +105,7 @@ class Game {
     this.radiuses = new Float32Array(this.COUNT);
     this.targets = new Float32Array(this.COUNT * 2);
     this.labels = new Array(this.COUNT);
+    this.states = new Float32Array(this.COUNT * 4);
 
     // this.world = this.setupWorld();
     this.renderer = new THREE.WebGLRenderer();
@@ -109,12 +124,13 @@ class Game {
       return false;
     }
 
+    const far = 1500;
     this.container = document.createElement('div');
     document.body.appendChild(this.container);
     this.camera = new THREE.PerspectiveCamera(
-        50, window.innerWidth / window.innerHeight, 1, 5000);
+        50, window.innerWidth / window.innerHeight, 1, far);
 
-    this.camera.position.set(0, 0, 1000);
+    this.camera.position.set(0, 0, far);
     this.scene = new THREE.Scene();
 
     const circleGeometry = new THREE.CircleBufferGeometry(1, 8);
@@ -162,6 +178,8 @@ class Game {
         'seed', new THREE.InstancedBufferAttribute(this.seed, 2));
     this.geometry.addAttribute(
         'velocity', new THREE.InstancedBufferAttribute(this.velocities, 2));
+    this.geometry.addAttribute(
+        'state', new THREE.InstancedBufferAttribute(this.states, 4));
 
     this.mesh = new THREE.Mesh(this.geometry, this.material);
     this.mesh.scale.set(1, 1, 1);
@@ -176,7 +194,7 @@ class Game {
     this.container.appendChild(this.renderer.domElement);
 
     window.addEventListener('resize', this.onWindowResize.bind(this), false);
-
+    window.addEventListener('mousedown', this.onClick.bind(this));
 
     const side = this.SIDE;
     for (let x = 0; x < side; x++) {
@@ -184,6 +202,8 @@ class Game {
         const index = y * side + x;
         this.positions[index * 2 + 0] = -1000;
         this.positions[index * 2 + 1] = -1000;//
+        // this.positions[index * 2 + 0] = (Math.random() * 2. - 1.) * window.innerWidth;
+        // this.positions[index * 2 + 1] = (Math.random() * 2. - 1.) * window.innerHeight;//
 
         this.seed[index * 2 + 0] = Math.random() * 2 - 1;
         this.seed[index * 2 + 1] = Math.random() * 2 - 1;
@@ -192,7 +212,7 @@ class Game {
         // window.innerWidth * 0.3;
         // this.targets[index * 2 + 1] = (Math.random() * 2. - 1.) *
         // window.innerHeight * 0.3;
-        this.radiuses[index] = 1.0;  //  + Math.floor(Math.random() * 5.);
+        this.radiuses[index] = 50.0;  //  + Math.floor(Math.random() * 5.);
 
 
         var labelDiv = document.createElement('div');
@@ -228,17 +248,9 @@ class Game {
     this.render(dt);
   }
 
-  delay: number = 5;
+  delay: number = 2;
 
   update(dt: number) {
-    this.delay -= dt;
-    if (this.delay < 0) {
-      this.delay = 1.0;
-      let x = (Math.random() * 2.0 - 1.0) * window.innerWidth * 0.5;
-      let y = (Math.random() * 2.0 - 1.0) * window.innerHeight * 0.5;
-      backend._BactorialSelect(x,y,x,y);
-      backend._BactorialDivide();
-    }
     this.updateLabels(dt);
     // this.updatePhysics(dt)
     // this.world.update();
@@ -251,15 +263,18 @@ class Game {
         'velocity', new THREE.InstancedBufferAttribute(this.velocities, 2));
     this.geometry.addAttribute(
         'radius', new THREE.InstancedBufferAttribute(this.radiuses, 1));
+    this.geometry.addAttribute(
+        'state', new THREE.InstancedBufferAttribute(this.states, 4));
   }
 
   updateLabels(dt: number) {
     for (let index = 0; index < this.COUNT; index++) {
       let position = new THREE.Vector2(
           this.positions[index * 2 + 0], this.positions[index * 2 + 1]);
-      this.labels[index].element.innerHTML = `${this.velocities[index * 2 + 0]}, ${this.velocities[index * 2 + 1]}`;//.position.set(position.x, position.y, 0);
+      // this.labels[index].element.innerHTML = `${this.velocities[index * 2 + 0].toFixed(3)}, ${this.velocities[index * 2 + 1].toFixed(3)}`;//.position.set(position.x, position.y, 0);
       // this.labels[index].element.innerHTML = this.radiuses[index];//.position.set(position.x, position.y, 0);
-      this.labels[index].position.set(position.x, position.y + this.radiuses[index] * 0.5, 0);
+      // this.labels[index].element.innerHTML = this.states[index];//.position.set(position.x, position.y, 0);
+      // this.labels[index].position.set(position.x, position.y + this.radiuses[index] * 0.5, 0);
     }
   }
   updatePhysics(dt: number) {
@@ -351,19 +366,29 @@ class Game {
 
 
   backendUpdate(dt: number) {
+    // this.delay -= dt;
+    // if (this.delay < 0) {
+    //   this.delay = 1.0;
+    //   let x = (Math.random() * 2.0 - 1.0) * 300.0 * 0.5;
+    //   let y = (Math.random() * 2.0 - 1.0) * 300.0 * 0.5;
+    //   console.log('divide')
+    //   backend._BactorialSelect(x-100,y-100,x+100,y+100);
+    //   backend._BactorialDivide();
+    // }
+
     if (backend.calledRun && !this.inited) {
       this.backendAllocation = backend._BactorialInitWorld();
       this.inited = true;
       }
 
     if (backend.calledRun && this.inited) {
-      backend._BactorialUpdateWorld(dt);
+      backend._BactorialUpdateWorld(dt * 2);
     }
 
-    this.loadState();
+    this.loadState(dt);
   }
 
-  loadState() {
+  loadState(dt: number) {
     let ptr = this.backendAllocation;
     let objectCount = backend.getValue(ptr, 'i32');
     ptr += 4
@@ -374,22 +399,40 @@ class Game {
     ptr += 4
     let radiusesPtr = backend.getValue(ptr, '*');
     ptr += 4
+    let statesPtr = backend.getValue(ptr, '*');
+    ptr += 4
 
     let index = 0;
 
     while (index < objectCount && index < this.COUNT) {
-      this.positions[index * 2 + 0] = backend.getValue(positionsPtr, 'float')
+      this.positions[index * 2 + 0] = backend.getValue(positionsPtr, 'float');
       positionsPtr += 4;
-      this.positions[index * 2 + 1] = backend.getValue(positionsPtr, 'float')
+      this.positions[index * 2 + 1] = backend.getValue(positionsPtr, 'float');
       positionsPtr += 4;
 
-      this.velocities[index * 2 + 0] = backend.getValue(velocitiesPtr, 'float')
+      let vx = backend.getValue(velocitiesPtr, 'float');
       velocitiesPtr += 4;
-      this.velocities[index * 2 + 1] = backend.getValue(velocitiesPtr, 'float')
+      let vy = backend.getValue(velocitiesPtr, 'float');
       velocitiesPtr += 4;
+
+      this.velocities[index * 2 + 0] = THREE.Math.lerp(this.velocities[index * 2 + 0], vx, .05);
+      this.velocities[index * 2 + 1] = THREE.Math.lerp(this.velocities[index * 2 + 1], vy, .05);
 
       this.radiuses[index] = backend.getValue(radiusesPtr, 'float');
       radiusesPtr += 4;
+
+      const raw = backend.getValue(statesPtr, 'i8') & 0xFF;
+
+      // enemy flag
+      this.states[index * 4 + 0] = (raw >> 7 & 0x1);
+      // selected flag
+      this.states[index * 4 + 1] = (raw >> 6 & 0x1);
+      // state enum
+      this.states[index * 4 + 2] = (raw >> 5);
+      // unused yet... (timer in future)
+      this.states[index * 4 + 3] = 0;
+
+      statesPtr += 1;
 
       index++;
     }
@@ -402,7 +445,7 @@ class Game {
     // this.mesh.rotation.x = time * 0.2;
     // this.mesh.rotation.y = time * 0.4;
     this.renderer.render(this.scene, this.camera);
-    this.labelRenderer.render(this.scene, this.camera);
+    // this.labelRenderer.render(this.scene, this.camera);
   }
 }
 

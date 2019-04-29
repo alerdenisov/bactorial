@@ -3,15 +3,19 @@ precision highp float;
 uniform sampler2D map;
 uniform float time;
 
-varying vec2 vUv;
-varying vec2 vIndex;
-varying vec2 vVelocity;
+// varying vec2 vUv;
+// varying vec2 vIndex;
+// varying vec2 vVelocity;
+// varying vec4 vState;
+
+varying vec4 vParams1;
+varying vec4 vParams2;
 
 #define S(a, b, c) smoothstep(a, b, c)
 #define saturate(a) clamp(a, 0.0, 1.0)
-#define SLIDE_MIN .3
-#define SLIDE_MAX 1.
-#define SPREAD_MIN .02
+#define SLIDE_MIN .4
+#define SLIDE_MAX 2.
+#define SPREAD_MIN .045
 #define SPREAD_MAX .15
 #define SIZE 8.
 #define STEPS 2
@@ -40,6 +44,7 @@ vec2 hash(vec2 x) // replace this by something better
 }
 
 float noise(vec2 p) {
+  p += vParams1.zw;
   vec2 i = floor(p);
   vec2 f = fract(p);
 
@@ -81,8 +86,16 @@ float box(vec2 p, vec2 b)
     return length(max(d,vec2(0.0))) + min(max(d.x,d.y),0.0);
 }
 
+// void main() {
+//   gl_FragColor = vec4(1.,0.,0.,1.);
+// }
+
 void main() {
-  vec2 vel = vVelocity / 2.0;
+  vec2 vUv = vParams1.xy;
+  vec2 vel = vParams2.xy / 15.0;
+  float vEnemy = 1.0 - vParams2.z;
+  float vSelected = vParams2.w;
+  
   // gl_FragColor = vec4(vVelocity, 0., 1.);
   // return;
 
@@ -126,11 +139,24 @@ void main() {
 
   #define SIZE_BODY 0.35
 
-  float s1 = sphere(p, SIZE_BODY);
+
+  float dt = fract(time / 3.);
+  float ft = sin(dt * 32.) * dt;
+  // float div1 = sphere(p + vec2(-ft, 0) * 0.5, SIZE_BODY * (1. - ft * 0.5));
+  // float div2 = sphere(p + vec2(ft, 0) * 0.5, SIZE_BODY * (1. - ft * 0.5));
+
+  float status = 0.0;
+  float divide = abs(1.0 - status) < 0.01 ? 1.0 : 0.0;//vStatus.x);
+  float idle = abs(0.0 - status) < 0.01 ? 1.0 : 0.0;
+
+  float divideBodyShake = ft * 0.3 * divide;
+
+  float s1 = sphere(p, SIZE_BODY + divideBodyShake);
   float s2 = sphere(p + v * 0.7, (1. - vp) * SIZE_BODY);
 
   bg = smoothDistance(s1, s2, .65);
-  bg += r * spread;
+  // bg = smoothDistance(div1, div2, 0.7);//, smoothDistance(s1, s2, .65), saturate(ft));
+  bg += r * mix(1.0, spread, idle) * mix(1.0, ft, divide);
   bg = S(0.15, -0.25, bg);
   
   float mask = S(0.15, 0.25, bg);
@@ -138,7 +164,7 @@ void main() {
   #define EYE_SPREAD 0.15
   #define EYE_SIZE 0.05
   #define EYE_VELOCITY_COEF 0.25
-  #define SHAKE_POWER 0.05
+  #define SHAKE_POWER 0.075
 
   vec2 face_offset = -vel * EYE_VELOCITY_COEF;
   float eye1 = sphere(p - vec2(EYE_SPREAD, 0.0) + face_offset, EYE_SIZE) + r * SHAKE_POWER;
@@ -146,10 +172,9 @@ void main() {
   // float month = SUB(sphere(p + vec2(0.0, 0.15), 0.2), box(p + vec2(0.0, 0.15) - vel * EYE_VELOCITY_COEF, vec2(0.08, 0.02))) + r * SHAKE_POWER;
   float month_shape = sphere(p + vec2(0.0, 0.1) + face_offset, 0.08 * (1. - s01)) + r * SHAKE_POWER;//, box(p + vec2(0.0, 0.15) - vel * EYE_VELOCITY_COEF, vec2(0.08, 0.02))) + r * SHAKE_POWER;
   float month_cut = box(p + vec2(0.0, 0.05) + face_offset, vec2(0.2, 0.05));
-
   float month = SUB(month_cut, month_shape);
-
   float eyes = 1.0 - S(0.01, 0.0, ADD(month, ADD(eye1, eye2)));
+
   mask *= eyes;
   // gl_FragColor = vec4(eyes,eyes,eyes,1.0);
   // return;
@@ -162,11 +187,13 @@ void main() {
 
   // gl_FragColor = vec4(bg * mask, bg * mask, bg * mask, 1.0);
 
+  vec3 enemyDark = vec3(.635, 0.160, .0);
+  vec3 enemyLight = vec3(1., 1., .929);
 
-  vec3 dark = vec3(.975, 0.274, .388);
-  // vec3 dark = vec3(1., .388, .490);
-  vec3 light = vec3(.988, .917, .929);
-  vec3 col = mix(dark, light, bg);
+  vec3 dark = mix(vec3(.975, 0.274, .388), vec3(.988, .917, .929), vSelected);
+  vec3 light = mix(vec3(.988, .917, .929), vec3(.975, 0.274, .388), vSelected);
+
+  vec3 col = mix(mix(dark, enemyDark, vEnemy), mix(light, enemyLight, vEnemy), bg);
 
   gl_FragColor = vec4(col * mask, 1.0);
   // vec3 col2 = mix(vec3(0.0), dark, r1);
