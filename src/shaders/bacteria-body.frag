@@ -178,8 +178,8 @@ void main() {
   float divideBodyShake = ft * 0.2 * divide;
 
   if (abs(vEnemy - 1.0) < 0.001) {
-    float box1 = box(rotate(p, PI + time), vec2(.45, .45));
-    float box2 = box(rotate(p, PI * 0.25 + time), vec2(.45, .45));
+    float box1 = box(rotate(p, PI + time), vec2(.3, .3)) + (r * 2.0 - 1.0) * 0.01;
+    float box2 = box(rotate(p, PI * 0.25 + time), vec2(.3, .3)) + (r * 2.0 - 1.0) * 0.01;
     bg = smoothDistance(box1, box2, .1);
   } else {
     float div1 = sphere(p + -vSeed * ft * 0.3, SIZE_BODY * (1. - ft * 0.5));
@@ -237,7 +237,7 @@ void main() {
 
   // gl_FragColor = vec4(bg * mask, bg * mask, bg * mask, 1.0);
 
-  vec3 enemyDark = vec3(.03, 0.160, .05);
+  vec3 enemyDark = vec3(.03, 0.160, .096);
   vec3 enemyLight = vec3(.65, 0.94, .54);
 
   vec3 deadDark = vec3(.078, 0.082, .113);
