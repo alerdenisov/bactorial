@@ -11,12 +11,12 @@ var Module = {
 };
 
 function init() {
-  globals.statePointer = Module._BactorialInitWorld();
+  globals.statePointer = Module._BactorialInitWorld(10, 10.0, 1);
   Module._BactorialUpdateWorld(1/60);
   loadState();
   console.log('World initialized');
 
-  doFrame();
+  var id = setInterval(doFrame, 3000);
 };
 
 function loadState() {
@@ -32,6 +32,8 @@ function loadState() {
     objectsData += 4;
     var radii = Module.getValue(objectsData, "*");
     objectsData += 4;
+    objectsData += 4;
+    var seeds = Module.getValue(objectsData, "*");
 
     for (var i=0; i<objectCount; ++i) {
         var x = Module.getValue(positions, "float");
@@ -56,6 +58,17 @@ function loadState() {
         radii += 4;
 
         globals.objects[i].radius = r;
+    }
+
+    for (var i=0; i<objectCount; ++i) {
+        var x = Module.getValue(seeds, "float");
+        seeds += 4;
+        var y = Module.getValue(seeds, "float");
+        seeds += 4;
+
+        // globals.objects[i].seed = {x:x, y:y};
+
+        console.log(' seed: {' + x + ', ' + y + '}');
     }
   }
 }

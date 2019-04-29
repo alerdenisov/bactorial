@@ -23,6 +23,7 @@
 
       function doFrame() {
         var tick = dT;
+        Module._BactorialSpawnEnemy(100.0, 20, 0.0, 0.0);
         Module._BactorialUpdateWorld(tick);
 
         globals.objects = [];
@@ -38,11 +39,13 @@
           context.arc(object.x + 250.0, object.y + 250.0, object.radius, 0, 2 * Math.PI);
           context.fill();
         }
-
         
         // bactorialDivide();
         Module._BactorialDivide();
-        Module._BactorialSelect(-250.0, -250.0, 250.0, 250.0);
+        var Selected = Module._BactorialSelect(-250.0, -250.0, 250.0, 250.0);
+        Module._BactorialUnselect();
+        
+        console.log('Selected' + Selected);
 
         sleep(16);
       }
