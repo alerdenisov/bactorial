@@ -61,6 +61,13 @@ float smoothDistance(float d1, float d2, float k) {
   return mix(d2, d1, h) - k * h * (1.0 - h);
 }
 
+vec2 rotate(vec2 v, float a) {
+	float s = sin(a);
+	float c = cos(a);
+	mat2 m = mat2(c, -s, s, c);
+	return m * v;
+}
+
 // float sdRoundCone(vec3 p, float r1, float r2, float h)
 // {
 //     vec2 q = vec2( length(p.xz), p.y );
@@ -94,6 +101,7 @@ void main() {
   vec2 vUv = vParams1.xy;
   vec2 vSeed = vParams1.zw;
   vec2 vel = vParams2.xy / 15.0;
+  // float vEnemy = 1.0;//
   float vEnemy = 1.0 - vParams2.z;
   float vSelected = vParams2.w;
   float vIdle = abs(vState - 0.0) < 0.01 ? 1.0 : 0.0;
@@ -101,6 +109,10 @@ void main() {
   float vAttack = abs(vState - 2.0) < 0.01 ? 1.0 : 0.0;
   float vDead = abs(vState - 3.0) < 0.01 ? 1.0 : 0.0;
 
+  if (vDead > 0.0) {
+    gl_FragColor = vec4(1., 0., 0., 1.);
+    return;
+  }
   // if(vDivide > 0.0) {
   //   gl_FragColor = vec4(1.0, vState, 0., 1.);
   //   return;
@@ -132,59 +144,86 @@ void main() {
   // );
   // return;
 
+
+
   float r = noise(vUv * SIZE + time * dir * slide);// + vIndex.x * SIZE + time * SLIDE);
-  float d = saturate(length(vUv * 2.0 - 1.0) * 1.85);
-  float bg = 1. - pow(d, SHINESS);
-  bg = length(vUv * 2.0 - 1.0);
+  // float d = saturate(length(vUv * 2.0 - 1.0) * 1.85);
+  // bg = length(vUv * 2.0 - 1.0);
   // bg = min(bg, length(vUv * 2.0 - 1.0 + vec2(1.0, 1.0) * fract(time)));
   // bg = sin(length(vUv * 2.0 - 1.0 + (vec2(1.0, 1.0) * (fract(time) * 2.0 -
   // 1.0))));
 
+  float bg = 0.;
   vec2 p = vUv * 2.0 - 1.0;
   vec2 v = vel;//normalize(vec2(1.0, 1.0)) * sin(time * PI);
   float vp = length(v);
   // bg = bg;// * abs(dot(p, v));
 
+
+  // ██████╗  ██████╗ ██████╗ ██╗   ██╗
+  // ██╔══██╗██╔═══██╗██╔══██╗╚██╗ ██╔╝
+  // ██████╔╝██║   ██║██║  ██║ ╚████╔╝ 
+  // ██╔══██╗██║   ██║██║  ██║  ╚██╔╝  
+  // ██████╔╝╚██████╔╝██████╔╝   ██║   
+  // ╚═════╝  ╚═════╝ ╚═════╝    ╚═╝   
+
   #define SIZE_BODY 0.35
-
-
   float elapsed = (time - vParams3.y);
   float dt = fract(elapsed);
   float ft = sin(dt * 8.) * (dt * 2.1);
-  float div1 = sphere(p + -vSeed * ft * 0.35, SIZE_BODY * (1. - ft * 0.5));
-  float div2 = sphere(p + vSeed * ft * 0.35, SIZE_BODY * (1. - ft * 0.5));
-
   float divide = vDivide;//abs(1.0 - status) < 0.01 ? 1.0 : 0.0;//vStatus.x);
   float idle = vIdle;//abs(0.0 - status) < 0.01 ? 1.0 : 0.0;
-
   float divideBodyShake = ft * 0.2 * divide;
 
-  float s1 = sphere(p, SIZE_BODY + divideBodyShake);
-  float s2 = sphere(p + v * 0.7, (1. - vp) * SIZE_BODY);
+  if (abs(vEnemy - 1.0) < 0.001) {
+    float box1 = box(rotate(p, PI + time), vec2(.45, .45));
+    float box2 = box(rotate(p, PI * 0.25 + time), vec2(.45, .45));
+    bg = smoothDistance(box1, box2, .1);
+  } else {
+    float div1 = sphere(p + -vSeed * ft * 0.35, SIZE_BODY * (1. - ft * 0.5));
+    float div2 = sphere(p + vSeed * ft * 0.35, SIZE_BODY * (1. - ft * 0.5));
+    // float box1 = box(p, vec2(.35, .35));
+    // float s1 = smoothDistance(box1, box2, 0.1);//, .1);//sphere(p, SIZE_BODY + divideBodyShake);
+    float s1 = sphere(p, SIZE_BODY + divideBodyShake);
+    float s2 = sphere(p + v * 0.7, (1. - vp) * SIZE_BODY);
 
-
-  bg = mix(smoothDistance(s1, s2, .65), smoothDistance(div1, div2, 0.7), vDivide);//, smoothDistance(s1, s2, .65), saturate(ft));
+    // bg = mix(smoothDistance(s1, s2, ., smoothDistance(div1, div2, 0.7), vDivide);//, smoothDistance(s1, s2, .65), saturate(ft));
+    bg = mix(smoothDistance(s1, s2, .65), smoothDistance(div1, div2, 0.7), vDivide);//, smoothDistance(s1, s2, .65), saturate(ft));
+  
+  }
 
   bg += r * mix(1.0, spread, idle) * mix(1.0, ft * divideBodyShake, divide);
   bg = S(0.15, -0.25, bg);
-  
+
   float mask = S(0.15, 0.25, bg);
 
+
+  // ███████╗ █████╗  ██████╗███████╗
+  // ██╔════╝██╔══██╗██╔════╝██╔════╝
+  // █████╗  ███████║██║     █████╗  
+  // ██╔══╝  ██╔══██║██║     ██╔══╝  
+  // ██║     ██║  ██║╚██████╗███████╗
+  // ╚═╝     ╚═╝  ╚═╝ ╚═════╝╚══════╝
+                                  
   #define EYE_SPREAD 0.15
   #define EYE_SIZE 0.05
   #define EYE_VELOCITY_COEF 0.25
   #define SHAKE_POWER 0.075
+  if (abs(vEnemy - 1.0) < 0.001) {
 
-  vec2 face_offset = -vel * EYE_VELOCITY_COEF;
-  float eye1 = sphere(p - vec2(EYE_SPREAD, 0.0) + face_offset, EYE_SIZE) + r * SHAKE_POWER;
-  float eye2 = sphere(p + vec2(EYE_SPREAD, 0.0) + face_offset, EYE_SIZE) + r * SHAKE_POWER;
-  // float month = SUB(sphere(p + vec2(0.0, 0.15), 0.2), box(p + vec2(0.0, 0.15) - vel * EYE_VELOCITY_COEF, vec2(0.08, 0.02))) + r * SHAKE_POWER;
-  float month_shape = sphere(p + vec2(0.0, 0.1) + face_offset, 0.08 * (1. - s01)) + r * SHAKE_POWER;//, box(p + vec2(0.0, 0.15) - vel * EYE_VELOCITY_COEF, vec2(0.08, 0.02))) + r * SHAKE_POWER;
-  float month_cut = box(p + vec2(0.0, 0.05) + face_offset, vec2(0.2, 0.05));
-  float month = SUB(month_cut, month_shape);
-  float eyes = 1.0 - S(0.01, 0.0, ADD(month, ADD(eye1, eye2)));
+  } else {
+    vec2 face_offset = -vel * EYE_VELOCITY_COEF;
+    float eye1 = sphere(p - vec2(EYE_SPREAD, 0.0) + face_offset, EYE_SIZE) + r * SHAKE_POWER;
+    float eye2 = sphere(p + vec2(EYE_SPREAD, 0.0) + face_offset, EYE_SIZE) + r * SHAKE_POWER;
+    // float month = SUB(sphere(p + vec2(0.0, 0.15), 0.2), box(p + vec2(0.0, 0.15) - vel * EYE_VELOCITY_COEF, vec2(0.08, 0.02))) + r * SHAKE_POWER;
+    float month_shape = sphere(p + vec2(0.0, 0.1) + face_offset, 0.08 * (1. - s01)) + r * SHAKE_POWER;//, box(p + vec2(0.0, 0.15) - vel * EYE_VELOCITY_COEF, vec2(0.08, 0.02))) + r * SHAKE_POWER;
+    float month_cut = box(p + vec2(0.0, 0.05) + face_offset, vec2(0.2, 0.05));
+    float month = SUB(month_cut, month_shape);
+    float eyes = 1.0 - S(0.01, 0.0, ADD(month, ADD(eye1, eye2)));
+    
+    mask *= eyes;
+  }
 
-  mask *= eyes;
   // gl_FragColor = vec4(eyes,eyes,eyes,1.0);
   // return;
   // bg = s2;
@@ -196,8 +235,8 @@ void main() {
 
   // gl_FragColor = vec4(bg * mask, bg * mask, bg * mask, 1.0);
 
-  vec3 enemyDark = vec3(.635, 0.160, .0);
-  vec3 enemyLight = vec3(1., 1., .929);
+  vec3 enemyDark = vec3(.03, 0.160, .05);
+  vec3 enemyLight = vec3(.65, 0.94, .54);
 
   vec3 dark = mix(vec3(1., 0.388, .501), vec3(.988, .917, .929), vSelected);
   vec3 light = mix(vec3(.988, .917, .929), vec3(1., 0.388, .501), vSelected);

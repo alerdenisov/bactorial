@@ -85,6 +85,8 @@ class Game {
   onClick(event: MouseEvent) {
     event.preventDefault();
 
+    console.log(backend)
+
     if (!this.gameStarted) {
       setInterval(() => backend._BactorialSpawnEnemy(3, 5 + Math.pow(Math.random(), 2.2) * 10, 1, 1), 5000);
       this.gameStarted = true;
